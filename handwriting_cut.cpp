@@ -13,6 +13,9 @@ int cols;//页面列数
 int rows;//页面行数
 int wordCount = 0;//当前字数
 
+vector<vector<int> >* _src;
+vector<vector<int> >* _dst;
+
 /*
 * @brief 对输入图像进行细化,骨骼化
 * @param src为输入图像,用cvThreshold函数处理过的8位灰度图像格式，元素中只有0与1,1代表有元素，0代表为空白
@@ -278,35 +281,48 @@ void thinImage4(Mat& src, Mat& dst)
 }
 
 //切割字体提取
-void getWordByCut(const vector<vector<int> >& val, int fromRow, int toRow, int fromCol, int toCol) {
+void getWordByCut(int fromRow, int toRow, int fromCol, int toCol) {
+	const vector<vector<int> >& src = *_src, & dst = *_dst;
 	wordCount++;//更新字数
 	//创建三通道图
 	int wordRows = toRow - fromRow + 1, wordCols = toCol - fromCol + 1;
-	cv::Mat image(wordRows, wordCols, CV_8UC3);
+	cv::Mat srcImage(wordRows, wordCols, CV_8UC3);
+	cv::Mat dstImage(wordRows, wordCols, CV_8UC3);
 	//设置像素值
 	for (int i = 0; i < wordRows; i++)
 	{
 		for (int j = 0; j < wordCols; j++)
 		{
 			int valI = i + fromRow, valJ = j + fromCol;
-			if (val[valI][valJ] == 1) {//黑色
-				image.at<cv::Vec3b>(i, j) =
+			//二值化
+			if (src[valI][valJ] == 1) {//黑色
+				srcImage.at<cv::Vec3b>(i, j) =
 					cv::Vec3b(0, 0, 0);
 			}
 			else {//背景（白色）
-				image.at<cv::Vec3b>(i, j) = cv::Vec3b(255, 255, 255);
+				srcImage.at<cv::Vec3b>(i, j) = cv::Vec3b(255, 255, 255);
+			}
+			//细化
+			if (dst[valI][valJ] == 1) {//黑色
+				dstImage.at<cv::Vec3b>(i, j) =
+					cv::Vec3b(0, 0, 0);
+			}
+			else {//背景（白色）
+				dstImage.at<cv::Vec3b>(i, j) = cv::Vec3b(255, 255, 255);
 			}
 		}
 	}
 	//保存
-	//cv::imshow("原图", image);
+	//cv::imshow("原图", srcImage);
 	char ss[10];
 	sprintf_s(ss, "%03d", wordCount);
-	cv::imwrite(path + "words/" + ss + "(" + to_string(fromRow) + "," + to_string(fromCol) + ").bmp", image);
+	cv::imwrite(path + "words/" + ss + "(" + to_string(fromRow) + "," + to_string(fromCol) + ")_s.bmp", srcImage);
+	cv::imwrite(path + "words/" + ss + "(" + to_string(fromRow) + "," + to_string(fromCol) + ").bmp", dstImage);
 }
 
 //切割列数
-void cutByCol(const vector<vector<int> >& val, int fromRow, int toRow) {
+void cutByCol(int fromRow, int toRow) {
+	const vector<vector<int> >& val = *_src;
 	int fromCol = 0;
 	bool hasBlack = false;//是否已经经过非纯白列
 	int blackCol;//首次经过非白行的列下标
@@ -322,7 +338,7 @@ void cutByCol(const vector<vector<int> >& val, int fromRow, int toRow) {
 		}
 		//如果没遇到黑色且存在黑色标记，说明可以进行行切割
 		if (i > toRow && hasBlack && j - blackCol > 80) {
-			getWordByCut(val, fromRow, toRow, fromCol, j);
+			getWordByCut(fromRow, toRow, fromCol, j);
 			//标志重置
 			fromCol = j + 1;
 			hasBlack = false;
@@ -332,7 +348,8 @@ void cutByCol(const vector<vector<int> >& val, int fromRow, int toRow) {
 }
 
 //切割行数
-void cutByRow(const vector<vector<int> > & val) {
+void cutByRow() {
+	const vector<vector<int> >& val = *_src;
 	int fromRow = 0;
 	bool hasBlack = false;//是否已经经过非纯白行
 	int blackRow;//首次经过非白行的行下标
@@ -349,7 +366,7 @@ void cutByRow(const vector<vector<int> > & val) {
 		//如果没遇到黑色且存在黑色标记，说明可以进行行切割
 		if (j == cols && hasBlack && i - blackRow > 80) {
 			//按列切割
-			cutByCol(val, fromRow, i);
+			cutByCol(fromRow, i);
 			//标志重置
 			fromRow = i + 1;
 			hasBlack = false;
@@ -358,19 +375,20 @@ void cutByRow(const vector<vector<int> > & val) {
 	}
 }
 
-void cutWords(const Mat& dst) {
+void cutWords(const Mat& src, const Mat& dst) {
 	//操作矩阵 
-	vector<vector<int> >* _val =
-		new vector<vector<int> >(rows, vector<int>(cols, 0));
-	vector<vector<int> >& val = *_val;
+	_src = new vector<vector<int> >(rows, vector<int>(cols, 0));
+	_dst = new vector<vector<int> >(rows, vector<int>(cols, 0));
+	vector<vector<int> > & srcVal = *_src, & dstVal = *_dst;
 	//初始化像素值 0-白色 1-黑色
 	for (int i = 0; i < rows; i++) {
 		for (int j = 0; j < cols; j++) {
-			val[i][j] = dst.at<uchar>(i, j) == 255 ? 0 : 1;
+			srcVal[i][j] = src.at<uchar>(i, j) == 255 ? 0 : 1;
+			dstVal[i][j] = dst.at<uchar>(i, j) == 255 ? 0 : 1;
 		}
 	}
 	//首先按行切割
-	cutByRow(val);
+	cutByRow();
 }
 
 void main()
@@ -384,7 +402,7 @@ void main()
 	//骨架化
 	//namedWindow("原图", 1);
 	//imshow("原图", src);
-	GaussianBlur(src, src, Size(7, 7), 0, 0);//高斯滤波
+	GaussianBlur(src, src, Size(7, 7), 0, CV_8UC1);//高斯滤波
 	//imshow("二值化图像", src);
 
 	threshold(src, src, 140, 1, cv::THRESH_BINARY_INV);//二值化，前景为1，背景为0
@@ -401,8 +419,8 @@ void main()
 	//imshow("细化图像", dst1);
 	imwrite(path + "001(" + to_string(rows) + "," + to_string(cols) + ").bmp", dst1);
 	
-	//切割字体
-	cutWords(dst1);
+	//切割字体(二值化和细化)
+	cutWords(src1, dst1);
 
 	waitKey(0);
 }
