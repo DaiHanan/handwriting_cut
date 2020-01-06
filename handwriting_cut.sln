@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29519.181
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "handwriting_cut", "handwriting_cut.vcxproj", "{DBBD2D30-3B3F-4A59-82D7-A3ACCF699129}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{DBBD2D30-3B3F-4A59-82D7-A3ACCF699129}.Debug|x64.ActiveCfg = Debug|x64
+		{DBBD2D30-3B3F-4A59-82D7-A3ACCF699129}.Debug|x64.Build.0 = Debug|x64
+		{DBBD2D30-3B3F-4A59-82D7-A3ACCF699129}.Debug|x86.ActiveCfg = Debug|Win32
+		{DBBD2D30-3B3F-4A59-82D7-A3ACCF699129}.Debug|x86.Build.0 = Debug|Win32
+		{DBBD2D30-3B3F-4A59-82D7-A3ACCF699129}.Release|x64.ActiveCfg = Release|x64
+		{DBBD2D30-3B3F-4A59-82D7-A3ACCF699129}.Release|x64.Build.0 = Release|x64
+		{DBBD2D30-3B3F-4A59-82D7-A3ACCF699129}.Release|x86.ActiveCfg = Release|Win32
+		{DBBD2D30-3B3F-4A59-82D7-A3ACCF699129}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {4EA91C83-FB35-4449-B165-DFA28324544E}
+	EndGlobalSection
+EndGlobal
