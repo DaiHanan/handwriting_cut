@@ -280,6 +280,7 @@ void thinImage4(Mat& src, Mat& dst)
 	}
 }
 
+
 //切割字体提取
 void getWordByCut(int fromRow, int toRow, int fromCol, int toCol) {
 	const vector<vector<int> >& src = *_src, & dst = *_dst;
@@ -320,6 +321,52 @@ void getWordByCut(int fromRow, int toRow, int fromCol, int toCol) {
 	cv::imwrite(path + "words/" + ss + "(" + to_string(fromRow) + "," + to_string(fromCol) + ").bmp", dstImage);
 }
 
+void shrinkRange(int fromRow, int toRow, int fromCol, int toCol) {
+	const vector<vector<int> >& val = *_src;
+	bool finish = false;
+	//左右
+	while (fromCol <= toCol && finish == false) {
+		int i = fromRow;
+		for (; i <= toRow; i++) {
+			if (val[i][fromCol] == 1) break;//左边没有遇到黑色
+		}
+		if (i > toRow) fromCol++;//删除该列
+		else finish = true;
+
+		i = fromRow;
+		for (; i <= toRow; i++) {
+			if (val[i][toCol] == 1) break;//右边没有遇到黑色
+		}
+		if (i > toRow) {//删除该列
+			toCol--;
+			finish = false;
+		}
+	}
+	if (fromCol >= toCol) return;//没有字体
+	//上下
+	finish = false;
+	while (fromRow <= toRow && finish == false) {
+		int i = fromCol;
+		for (; i <= toCol; i++) {
+			if (val[fromRow][i] == 1) break;//上边没有遇到黑色
+		}
+		if (i > toCol) fromRow++;//删除该行
+		else finish = true;
+
+		i = fromCol;
+		for (; i <= toCol; i++) {
+			if (val[toRow][i] == 1) break;//下边没有遇到黑色
+		}
+		if (i > toCol) {//删除该行
+			toRow--;
+			finish = false;
+		}
+	}
+	if (fromRow >= toRow) return;//没有字体
+	//存在字体则切割
+	getWordByCut(fromRow, toRow, fromCol, toCol);
+}
+
 //切割列数
 void cutByCol(int fromRow, int toRow) {
 	const vector<vector<int> >& val = *_src;
@@ -338,7 +385,7 @@ void cutByCol(int fromRow, int toRow) {
 		}
 		//如果没遇到黑色且存在黑色标记，说明可以进行行切割
 		if (i > toRow && hasBlack && j - blackCol > 80) {
-			getWordByCut(fromRow, toRow, fromCol, j);
+			shrinkRange(fromRow, toRow, fromCol, j);
 			//标志重置
 			fromCol = j + 1;
 			hasBlack = false;
